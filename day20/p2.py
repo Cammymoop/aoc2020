@@ -63,6 +63,19 @@ def matching_edge_exists(edge, from_id):
             if e == edge or e == backwards:
                 return True
 
+# given an edge and a tile_id, find the matching edge in the tile if it exists
+# return the edge index (TOP, BOTTOM, LEFT, RIGHT) and whether or not it needs to be flipped
+# if it doesn't match at all return -1
+def find_matching_edge_and_flip(edge, tile_id):
+    backwards = reverse(edge)
+    check_edges = get_edges_from_id(tile_id)
+    for i in range(4):
+        if check_edges[i] == edge:
+            return i, False
+        if check_edges[i] == backwards:
+            return i, True
+    return -1, False
+
 
 # finding corners should be easy assuming what the description said is true about 
 # outer edges not matching any other tiles
@@ -91,6 +104,31 @@ for tile_id in tiles:
 # but if it is it means I dont have to care the orientation of the sides that match
 # though I still need to get the orientation of the match to place the piece in the image
 
-first_corner = tiles[corner_ids.pop()]
+first_tid = corner_ids.pop()
+first_corner = tiles[first_tid]
 edges = get_edges(first_corner)
+
+if (matching_edge_exists(edges[0], first_tid)):
+    if (matching_edge_exists(edges[1], first_tid)):
+        print("uh oh, not really a corner?!")
+    first_corner = tile_flip_v(first_corner)
+
+edges = get_edges(first_corner)
+if (matching_edge_exists(edges[2], first_tid)):
+    if (matching_edge_exists(edges[3], first_tid)):
+        print("uh oh, not really a corner?!")
+    first_corner = tile_flip_h(first_corner)
+
+# Ok got first corner set up, now just start attaching on pieces where they match left
+
+initial_index = 1
+max_index = 144
+grid_width = 12
+all_remaining = corner_ids.copy()
+all_remaining.extend(side_ids)
+all_remaining.extend(mid_ids)
+
+for destination_index in range(initial_index, max_index):
+    for tid in all_remaining:
+        edge_i, flip = find_matching_edge_and_flip()
 
