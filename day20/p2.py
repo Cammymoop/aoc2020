@@ -43,6 +43,11 @@ def tile_flip_h(tile):
 def tile_flip_v(tile):
     return list(reversed(tile))
 
+def tile_transpose(tile):
+    new_tile = []
+    for i in range(len(tile[0])):
+        new_tile.append(reduce(lambda acc, x: acc + x[i], tile, ""))
+
 # Edge order is TOP, BOTTOM, LEFT, RIGHT
 def get_edges_from_id(tile_id):
     return get_edges(tiles[tile_id])
@@ -63,7 +68,7 @@ def matching_edge_exists(edge, from_id):
             if e == edge or e == backwards:
                 return True
 
-# given an edge and a tile_id, find the matching edge in the tile if it exists
+# given an edge and a tile id, find the matching edge in the tile if it exists
 # return the edge index (TOP, BOTTOM, LEFT, RIGHT) and whether or not it needs to be flipped
 # if it doesn't match at all return -1
 def find_matching_edge_and_flip(edge, tile_id):
@@ -121,6 +126,7 @@ if (matching_edge_exists(edges[2], first_tid)):
 
 # Ok got first corner set up, now just start attaching on pieces where they match left
 
+final_picture = [first_corner]
 initial_index = 1
 max_index = 144
 grid_width = 12
@@ -128,7 +134,51 @@ all_remaining = corner_ids.copy()
 all_remaining.extend(side_ids)
 all_remaining.extend(mid_ids)
 
+loop_count = 1
+
 for destination_index in range(initial_index, max_index):
+    loop_count += 1
+    if destination_index % grid_width == 0:
+        stick_to_tile = final_picture[destination_index - grid_width]
+        stick_to_edge = get_edges(stick_to_tile)[1]
+        vertical = True
+    else:
+        stick_to_tile = final_picture[destination_index - 1]
+        stick_to_edge = get_edges(stick_to_tile)[3]
+        vertical = False
+
     for tid in all_remaining:
-        edge_i, flip = find_matching_edge_and_flip()
+        edge_i, flip = find_matching_edge_and_flip(stick_to_edge, tid)
+        if edge_i == -1:
+            continue
+
+        transpose = vertical
+        next_tile = tiles[tid]
+        if edge_i == 1:
+            next_tile = tile_flip_v(next_tile)
+        elif edge_i == 3:
+            next_tile = tile_flip_h(next_tile)
+
+        if edge_i == 0 or edge_i == 1:
+            transpose = not transpose
+
+        if transpose:
+            next_tile = tile_transpose(next_tile)
+
+        if flip:
+            if vertical:
+                next_tile = tile_flip_h(next_tile)
+            else:
+                next_tile = tile_flip_v(next_tile)
+        
+        if not vertical and destination_index >= grid_width:
+            other_t = final_picture[destination_index - grid_width]
+            bottom = get_edges(other_t)[1]
+            top = next_tile[0]
+            if top != bottom:
+                print("It's not working, tile: " + str(loop_count))
+                sys.exit()
+
+        final_picture.append(next_tile)
+        break
 
