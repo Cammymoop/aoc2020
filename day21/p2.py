@@ -83,6 +83,7 @@ while single_ingredient_alergins < len(all_alergins):
 print(alergins_to_ingredients)
 #Sort alergins here
 sorted_alergins = all_alergins
+sorted_alergins.sort()
 
 answer = ""
 for a in sorted_alergins:
