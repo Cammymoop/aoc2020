@@ -293,6 +293,26 @@ t1 = 1
 t2 = len(tiles[tile_ids[0]][0]) - 1
 strings = t2 - t1
 
+PRINT_BOLD = '\033[1m'
+PRINT_GREEN = '\033[92m'
+PRINT_RED = '\033[91m'
+PRINT_END = '\033[0m'
+
+for row in semifinal_picture:
+    strings = []
+    for row_i in range(10):
+        acc = ""
+        for tile in row:
+            if row_i == 0 or row_i == 9:
+                acc += PRINT_BOLD + PRINT_GREEN + tile[row_i] + PRINT_END
+            else:
+                acc += PRINT_BOLD + PRINT_GREEN + tile[row_i][0] + PRINT_END
+                acc += tile[row_i][t1:t2]
+                acc += PRINT_BOLD + PRINT_GREEN + tile[row_i][-1] + PRINT_END
+        strings.append(acc)
+    for s in strings:
+        print(s)
+
 final_picture = []
 for row in semifinal_picture:
     strings = []
@@ -303,6 +323,7 @@ for row in semifinal_picture:
         strings.append(acc)
     for s in strings:
         final_picture.append(s)
+        print(s)
 
 PIC_WIDTH = len(final_picture[0])
 print(["Assembled pic", PIC_WIDTH, len(final_picture)])
@@ -326,6 +347,11 @@ def pic_matches(template, pic_section):
 def two_row_matches(template, pic_sections):
     return pic_matches(template[0], pic_sections[0]) and pic_matches(template[1], pic_sections[1])
 
+def print_section(pic, x, y, x2, y2):
+    print('=' * 20)
+    for row_i in range(y, y2):
+        print(pic[row_i][x:x2])
+
 def find_dragons(pic):
     dragons = []
     for y in range(SCAN_Y_START, SCAN_Y_END):
@@ -338,15 +364,19 @@ def find_dragons(pic):
                 x4 = x3 + DRAGON_TAIL_WIDTH
                 if two_row_matches(dragon_tail, [row[x2:x3], next_row[x2:x3]]):
                     if two_row_matches(dragon_tail, [row[x3:x4], next_row[x3:x4]]):
+                        #print("Third tail section found at " + str((x, y)))
                         x5 = x4 + DRAGON_HEAD_WIDTH
+                        #print_section(pic, x, y-1, x5, y+2)
                         if two_row_matches(dragon_head, [pic[y-1][x4:x5], row[x4:x5]]):
                             dragons.append((x, y))
     return dragons
 
 dragons_found_in = 0
-for transpose in range(1):
-    for flip_h in range(1):
-        for flip_v in range(1):
+dragons_be_there = []
+dragon_pic = []
+for transpose in range(2):
+    for flip_h in range(2):
+        for flip_v in range(2):
             pic_copy = final_picture.copy()
             if transpose > 0:
                 pic_copy = tile_transpose(pic_copy)
@@ -354,12 +384,58 @@ for transpose in range(1):
                 pic_copy = tile_flip_h(pic_copy)
             if flip_v > 0:
                 pic_copy = tile_flip_v(pic_copy)
-            dragon_count = len(find_dragons(pic_copy))
+            dragons_position = find_dragons(pic_copy)
+            dragon_count = len(dragons_position)
             if dragon_count > 0:
+                dragons_be_there = dragons_position
+                dragon_pic = pic_copy
                 print("Found " + str(dragon_count) + " dragons!!")
                 dragons_found_in += 1
 
 print("dragons found in " + str(dragons_found_in) + "/8 variations")
 
+dragon_rows = [
+        "                  O ",
+        "O    OO    OO    OOO",
+        " O  O  O  O  O  O   "]
+dragon_checks = ""
 
+wave_count = 0
+hash_count = 0
+hashes_per_dragon = 15
+for row_i in range(len(dragon_pic)):
+    row = dragon_pic[row_i]
+    acc = ""
+    for i in range(len(row)):
+        for coord in dragons_be_there:
+            x, y = coord
+            if i != x:
+                continue
+            if row_i == y - 1:
+                dragon_checks = dragon_rows[0]
+                break
+            elif row_i == y:
+                dragon_checks = dragon_rows[1]
+                break
+            elif row_i == y + 1:
+                dragon_checks = dragon_rows[2]
+                break
+
+        dragon_color = False
+        if len(dragon_checks) > 0:
+            dragon_color = dragon_checks[0] == 'O'
+            dragon_checks = dragon_checks[1:]
+        if dragon_color:
+            acc += PRINT_BOLD + PRINT_RED + row[i] + PRINT_END
+        else:
+            if row[i] == '#':
+                wave_count += 1
+            acc += row[i]
+
+        if row[i] == '#':
+            hash_count += 1
+    print(acc)
+
+print("I counted the waves 2 different ways")
+print([wave_count, hash_count - (hashes_per_dragon * len(dragons_be_there))])
 
