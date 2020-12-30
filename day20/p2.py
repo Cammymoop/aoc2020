@@ -304,8 +304,46 @@ for row in semifinal_picture:
     for s in strings:
         final_picture.append(s)
 
-print(["Assembled pic", len(final_picture[0]), len(final_picture)])
+PIC_WIDTH = len(final_picture[0])
+print(["Assembled pic", PIC_WIDTH, len(final_picture)])
 
+# Look for dragons and count waves
+dragon_head = ["O ", "OO"]
+DRAGON_HEAD_WIDTH = len(dragon_head[0])
+dragon_tail = ["O    O", " O  O "]
+DRAGON_TAIL_WIDTH = len(dragon_tail[0])
+DRAGON_WIDTH = DRAGON_TAIL_WIDTH * 3 + DRAGON_HEAD_WIDTH
+SCAN_X_END = PIC_WIDTH - (DRAGON_WIDTH - 1)
+SCAN_Y_START = 1
+SCAN_Y_END = PIC_WIDTH - 1
+
+def pic_matches(template, pic_section):
+    for i in range(len(template)):
+        if template[i] == "O" and pic_section[i] != "#":
+            return False
+    return True
+
+def two_row_matches(template, pic_sections):
+    return pic_matches(template[0], pic_sections[0]) and pic_matches(template[1], pic_sections[1])
+
+def find_dragons(pic):
+    dragons = []
+    for y in range(SCAN_Y_START, SCAN_Y_END):
+        row = pic[y]
+        next_row = pic[y + 1]
+        for x in range(SCAN_X_END):
+            x2 = x + DRAGON_TAIL_WIDTH
+            if two_row_matches(dragon_tail, [row[x:x2], next_row[x:x2]]):
+                x3 = x2 + DRAGON_TAIL_WIDTH
+                x4 = x3 + DRAGON_TAIL_WIDTH
+                if two_row_matches(dragon_tail, [row[x2:x3], next_row[x2:x3]]):
+                    if two_row_matches(dragon_tail, [row[x3:x4], next_row[x3:x4]]):
+                        x5 = x4 + DRAGON_HEAD_WIDTH
+                        if two_row_matches(dragon_head, [pic[y-1][x4:x5], row[x4:x5]]):
+                            dragons.append((x, y))
+    return dragons
+
+dragons_found_in = 0
 for transpose in range(1):
     for flip_h in range(1):
         for flip_v in range(1):
@@ -316,6 +354,12 @@ for transpose in range(1):
                 pic_copy = tile_flip_h(pic_copy)
             if flip_v > 0:
                 pic_copy = tile_flip_v(pic_copy)
+            dragon_count = len(find_dragons(pic_copy))
+            if dragon_count > 0:
+                print("Found " + str(dragon_count) + " dragons!!")
+                dragons_found_in += 1
+
+print("dragons found in " + str(dragons_found_in) + "/8 variations")
 
 
 
